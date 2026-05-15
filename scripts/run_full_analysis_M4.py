@@ -1,47 +1,3 @@
-"""
-run_full_analysis_M4.py
-
-Team Member 4 integration script for the MATH1604 group project.
-
-This script runs the complete analysis pipeline by using the modules written by
-Team Members 1, 2, and 3:
-
-1. Download raw answer files from the cloud source.
-2. Collate the downloaded files into one combined file.
-3. Extract answer sequences from each respondent file.
-4. Generate the mean answer sequence.
-5. Produce visualisations.
-6. Save a short text report describing possible patterns.
-
-The script is designed to work both with the final .py files and with the
-provided .pyc testing files, as long as they are importable under the expected
-module names:
-
-- data_extraction_M1
-- data_preparation_M2
-- data_analysis_M3
-
-Recommended repository structure:
-
-project_root/
-    data/
-    output/
-    scripts/
-        data_extraction_M1.py
-        data_preparation_M2.py
-        data_analysis_M3.py
-        run_full_analysis_M4.py
-    reviews/
-
-Run from the project root with:
-
-    python scripts/run_full_analysis_M4.py
-
-or run from inside the scripts folder with:
-
-    python run_full_analysis_M4.py
-"""
-
 from __future__ import annotations
 
 import argparse
@@ -50,17 +6,12 @@ import sys
 from pathlib import Path
 from typing import Iterable, Sequence
 
-
-# -----------------------------------------------------------------------------
-# Import path handling
-# -----------------------------------------------------------------------------
-
 SCRIPT_DIR = Path(__file__).resolve().parent
 PROJECT_ROOT = SCRIPT_DIR.parent if SCRIPT_DIR.name == "scripts" else SCRIPT_DIR
 DATA_DIR = PROJECT_ROOT / "data"
 OUTPUT_DIR = PROJECT_ROOT / "output"
 
-# Allow imports when running either from project root or from scripts/.
+
 for path in (SCRIPT_DIR, PROJECT_ROOT):
     if str(path) not in sys.path:
         sys.path.insert(0, str(path))
@@ -77,10 +28,6 @@ except ImportError as exc:
     ) from exc
 
 
-# -----------------------------------------------------------------------------
-# Configuration
-# -----------------------------------------------------------------------------
-
 DEFAULT_CLOUD_URL = (
     "https://raw.githubusercontent.com/"
     "fc-leeds/MATH1604_2025_2026_data/main"
@@ -88,11 +35,6 @@ DEFAULT_CLOUD_URL = (
 DEFAULT_TOTAL_RESPONDENTS = 64
 QUESTION_COUNT = 100
 VALID_ANSWERS = {1, 2, 3, 4}
-
-
-# -----------------------------------------------------------------------------
-# Helper functions
-# -----------------------------------------------------------------------------
 
 
 def ensure_project_folders() -> None:
@@ -103,40 +45,16 @@ def ensure_project_folders() -> None:
 
 
 def respondent_file_path(respondent_id: int) -> Path:
-    """
-    Return the expected local path for one downloaded respondent file.
-
-    Parameters
-    ----------
-    respondent_id:
-        Positive integer identifying the respondent.
-
-    Returns
-    -------
-    pathlib.Path
-        Path to answers_respondent_<id>.txt inside the data folder.
-    """
+  
     return DATA_DIR / f"answers_respondent_{respondent_id}.txt"
 
 
 
 def safe_extract_sequence(file_path: Path) -> list[int] | None:
-    """
-    Extract one respondent's answer sequence, returning None if extraction fails.
-
-    Parameters
-    ----------
-    file_path:
-        Path to the respondent's answer file.
-
-    Returns
-    -------
-    list[int] | None
-        A list of 100 answer values, or None if the file could not be processed.
-    """
+ 
     try:
         sequence = extract_answers_sequence(str(file_path))
-    except Exception as exc:  # noqa: BLE001 - keep pipeline robust for marking/demo.
+    except Exception as exc: 
         print(f"Warning: could not extract answers from {file_path}: {exc}")
         return None
 
@@ -152,22 +70,7 @@ def safe_extract_sequence(file_path: Path) -> list[int] | None:
 
 
 def extract_all_sequences(total_respondents: int) -> list[list[int]]:
-    """
-    Extract answer sequences from all locally available respondent files.
-
-    The extracted lists are also written to the output folder using the Team
-    Member 1 writer function. Missing or invalid files are skipped with a warning.
-
-    Parameters
-    ----------
-    total_respondents:
-        Number of respondent files expected by the pipeline.
-
-    Returns
-    -------
-    list[list[int]]
-        All successfully extracted answer sequences.
-    """
+  
     sequences: list[list[int]] = []
 
     for respondent_id in range(1, total_respondents + 1):
@@ -185,7 +88,7 @@ def extract_all_sequences(total_respondents: int) -> list[list[int]]:
 
         try:
             write_answers_sequence(sequence, respondent_id, str(OUTPUT_DIR))
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:  
             print(
                 "Warning: sequence was extracted but could not be written for "
                 f"respondent {respondent_id}: {exc}"
@@ -196,23 +99,7 @@ def extract_all_sequences(total_respondents: int) -> list[list[int]]:
 
 
 def rounded_mean_sequence(means: Sequence[float]) -> list[int]:
-    """
-    Convert mean answer values into an approximate answer sequence.
 
-    Since the true correct answers are not directly supplied, this uses the mean
-    answer per question as an approximate signal and rounds each value to the
-    nearest option from 1 to 4.
-
-    Parameters
-    ----------
-    means:
-        Sequence of mean answer values.
-
-    Returns
-    -------
-    list[int]
-        Rounded sequence containing only values 1, 2, 3, and 4.
-    """
     rounded: list[int] = []
     for value in means:
         if value is None or not isinstance(value, (int, float)) or math.isnan(float(value)):
@@ -224,21 +111,7 @@ def rounded_mean_sequence(means: Sequence[float]) -> list[int]:
 
 
 def period_error(sequence: Sequence[int], period: int) -> int:
-    """
-    Count mismatches when a sequence is compared with a repeating period.
-
-    Parameters
-    ----------
-    sequence:
-        Sequence of integers to test.
-    period:
-        Candidate repeating period.
-
-    Returns
-    -------
-    int
-        Number of positions that do not match the candidate periodic pattern.
-    """
+    
     mismatches = 0
     for index, value in enumerate(sequence):
         if value == 0:
@@ -250,21 +123,7 @@ def period_error(sequence: Sequence[int], period: int) -> int:
 
 
 def find_best_period(sequence: Sequence[int], max_period: int = 20) -> tuple[int, int]:
-    """
-    Find the candidate period with the fewest mismatches.
-
-    Parameters
-    ----------
-    sequence:
-        Approximate answer sequence to test.
-    max_period:
-        Largest period length to test.
-
-    Returns
-    -------
-    tuple[int, int]
-        Best period and number of mismatches for that period.
-    """
+    
     if not sequence:
         return 0, 0
 
@@ -275,19 +134,7 @@ def find_best_period(sequence: Sequence[int], max_period: int = 20) -> tuple[int
 
 
 def count_answers(values: Iterable[int]) -> dict[int, int]:
-    """
-    Count answer options 1, 2, 3, and 4 in a sequence.
-
-    Parameters
-    ----------
-    values:
-        Iterable of answer values.
-
-    Returns
-    -------
-    dict[int, int]
-        Dictionary mapping each valid option to its count.
-    """
+  
     counts = {answer: 0 for answer in sorted(VALID_ANSWERS)}
     for value in values:
         if value in counts:
@@ -302,20 +149,7 @@ def save_analysis_report(
     sequences: Sequence[Sequence[int]],
     report_path: Path,
 ) -> None:
-    """
-    Save a short text report summarising the analysis output.
-
-    Parameters
-    ----------
-    means:
-        Mean answer value for each question.
-    approximate_sequence:
-        Rounded mean sequence used as an approximate pattern signal.
-    sequences:
-        Individual respondent answer sequences.
-    report_path:
-        Destination path for the text report.
-    """
+    
     best_period, mismatches = find_best_period(approximate_sequence)
     counts = count_answers(approximate_sequence)
 
@@ -349,29 +183,12 @@ def save_analysis_report(
 
     report_path.write_text("\n".join(lines), encoding="utf-8")
 
-
-# -----------------------------------------------------------------------------
-# Main pipeline
-# -----------------------------------------------------------------------------
-
-
 def run_pipeline(
     cloud_url: str = DEFAULT_CLOUD_URL,
     total_respondents: int = DEFAULT_TOTAL_RESPONDENTS,
     make_plots: bool = True,
 ) -> None:
-    """
-    Run the full Team Member 4 analysis pipeline.
-
-    Parameters
-    ----------
-    cloud_url:
-        Base URL containing files named a1.txt, a2.txt, ..., aN.txt.
-    total_respondents:
-        Number of respondent files to attempt to download and analyse.
-    make_plots:
-        If True, call Team Member 3's visualisation function for scatter and line plots.
-    """
+    
     ensure_project_folders()
 
     print("Step 1/6: downloading answer files...")
@@ -382,7 +199,7 @@ def run_pipeline(
 
     collated_answers_path = OUTPUT_DIR / "collated_answers.txt"
     if not collated_answers_path.exists():
-        # Some implementations may save relative to the current working directory.
+        
         fallback_path = Path("output") / "collated_answers.txt"
         if fallback_path.exists():
             collated_answers_path = fallback_path
@@ -422,14 +239,7 @@ def run_pipeline(
 
 
 def parse_arguments() -> argparse.Namespace:
-    """
-    Parse command-line arguments for the integration script.
-
-    Returns
-    -------
-    argparse.Namespace
-        Parsed command-line arguments.
-    """
+   
     parser = argparse.ArgumentParser(
         description="Run the full MATH1604 Python quiz response analysis pipeline."
     )
