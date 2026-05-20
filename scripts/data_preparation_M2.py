@@ -15,7 +15,7 @@ def download_answer_files(cloud_url: str, path_to_data_folder: str, total_respon
         except Exception as e:
             print(f"Warning: could not download a{i}.txt: {e}")
  
-    print("Download step complete.")
+  print("Download step complete.")
  
  
 def collate_answer_files(data_folder_path: str) -> None:
